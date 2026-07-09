@@ -1,105 +1,139 @@
-# 30 秒 JFEX 展会宣传视频自动生成器
+# Google Colab 自动展会视频生成项目
 
-这个项目用于在 **Google Colab** 中自动读取 Google Drive 素材，并生成一个 30 秒横版展会宣传视频。你只需要把素材放进指定分类文件夹，运行 Notebook，即可输出 MP4 成片。
+本项目用于从 Google Drive 现有素材中，自动生成一个 **30 秒展会宣传视频 MP4**。第一版不使用复杂 AI 模型，重点是稳定、易运行、可自动适配素材。
 
-项目选择 **MoviePy + FFmpeg**：
+## 生成结果
 
-- 适合 Google Colab 运行，不需要搭建复杂渲染服务。
-- 可自动读取图片、视频、音乐并合成为 MP4。
-- 避免手动剪辑，适合展会快剪模板化生成。
+运行 Notebook 后会输出：
 
-## 输出规格
+```text
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/output/final_30s_exhibition_video.mp4
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/output/material_analysis.csv
+```
 
-- 分辨率：1920 × 1080
-- 帧率：30 fps
-- 时长：30 秒
-- 格式：MP4 / H.264 / AAC
-- 输出路径：`Exhibition_30s_Video/output/final_30s_exhibition_video.mp4`
+视频规格：
 
-## 视频结构
+- 1920 × 1080
+- 30 fps
+- MP4
+- H.264
+- 背景音乐优先使用 `music/` 中的音频；没有音乐时保留原视频声音
 
-| 时间 | 内容 | 素材来源 |
-| --- | --- | --- |
-| 0-3 秒 | 展馆入口照片 | `展馆入口照片` |
-| 3-8 秒 | 展位照片 | `展位照片` |
-| 8-27 秒 | 展馆内视频 | `展馆内视频` |
-| 27-30 秒 | logo 结尾 | `展会logo` |
+## 1. Google Drive 如何放素材
 
-系统会自动添加以下英文字幕：
-
-1. Exhibition Highlights
-2. Hunan Pavilion
-3. Featured Products
-4. Connecting with Global Buyers
-5. Business Opportunities
-6. JYX EXPO
-
-背景音乐会自动读取 `music` 文件夹中的第一首音频文件。如果没有音乐文件，也可以生成无音乐版本。
-
-## Google Drive 素材放置方式
-
-请在 Google Drive 的“我的云端硬盘”中创建以下目录：
+请在 Google Drive 的“我的云端硬盘”中创建或使用以下主文件夹：
 
 ```text
 30秒快剪-JFEX展会速览/
-├── 展位照片/
-├── 人流照片/
-├── 展馆入口照片/
-├── 展会主题背景图片/
-├── 展会logo/
-├── 展馆内视频/
-├── music/
-└── 视频剪辑文案word文档/
 ```
 
-### 文件要求
-
-- `展馆入口照片`：放 1 张或多张入口照片，支持 `.jpg`、`.jpeg`、`.png`、`.webp`。
-- `展位照片`：放 1 张或多张展位照片，支持 `.jpg`、`.jpeg`、`.png`、`.webp`。
-- `展馆内视频`：放至少 1 个展馆内视频，支持 `.mp4`、`.mov`、`.m4v`、`.avi`、`.mkv`、`.webm`。
-- `展会logo`：放 1 张或多张 logo 图片，建议透明 `.png`。
-- `music`：放至少 1 首背景音乐，支持 `.mp3`、`.wav`、`.m4a`、`.aac`、`.flac`、`.ogg`。
-- `人流照片`、`展会主题背景图片`、`视频剪辑文案word文档`：当前模板保留这些文件夹，方便后续扩展；本版 30 秒结构暂不强制使用。
-
-> 提示：同一个分类文件夹内放多张素材时，系统会自动随机选择一张。默认随机种子固定为 `2026`，所以同一批素材会得到可复现的结果；你也可以在命令中修改 `--seed`。
-
-## 如何在 Google Colab 运行
-
-1. 打开 `notebooks/Generate_30s_Exhibition_Video.ipynb`。
-2. 点击 Colab 顶部菜单：`Runtime` → `Run all`。
-3. 第一次运行时，Colab 会要求授权访问 Google Drive，请按提示登录并授权。
-4. Notebook 会安装依赖、挂载 Google Drive、检查素材并生成视频。
-5. 生成完成后，到 Google Drive 下载：
+程序会自动检查并创建这些子文件夹：
 
 ```text
-我的云端硬盘/Exhibition_30s_Video/output/final_30s_exhibition_video.mp4
+30秒快剪-JFEX展会速览/
+├── video/     # 展会视频素材
+├── photo/     # 展会照片素材
+├── logo/      # logo 图片素材
+├── music/     # 背景音乐，可选
+└── output/    # 自动输出视频、分析表、关键帧
 ```
 
-## 在本地或 GitHub Actions 中运行
+不需要固定文件名。你可以把已有素材直接放入对应文件夹：
 
-如果你已经把素材同步到本地，也可以直接运行：
+- `video/`：支持 `.mp4`、`.mov`、`.m4v`、`.avi`、`.mkv`、`.webm`
+- `photo/`：支持 `.jpg`、`.jpeg`、`.png`、`.webp`、`.bmp`、`.tif`、`.tiff`
+- `logo/`：支持常见图片格式，建议透明 `.png`
+- `music/`：支持 `.mp3`、`.wav`、`.m4a`、`.aac`、`.flac`、`.ogg`
+
+如果某个文件夹不存在，程序会自动创建。如果某类素材缺失，程序会自动跳过或用质量最高的其他素材替代。
+
+## 2. Colab 如何运行
+
+1. 将本项目文件上传到 Colab 环境，或在 Colab 中打开 `Generate_30s_Exhibition_Video.ipynb`。
+2. 点击菜单 `Runtime` → `Run all`。
+3. 第一步会自动挂载 Google Drive，请按提示授权。
+4. Notebook 会安装依赖、创建素材目录、打印发现的素材、分析素材并生成视频。
+5. 生成完成后，Notebook 最后会显示视频预览。
+
+Notebook 会扫描：
+
+```text
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/video/
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/photo/
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/logo/
+/content/drive/MyDrive/30秒快剪-JFEX展会速览/music/
+```
+
+## 3. 如何获得最终视频
+
+生成完成后，到 Google Drive 下载：
+
+```text
+我的云端硬盘/30秒快剪-JFEX展会速览/output/final_30s_exhibition_video.mp4
+```
+
+素材分析表在：
+
+```text
+我的云端硬盘/30秒快剪-JFEX展会速览/output/material_analysis.csv
+```
+
+分析表会记录：
+
+- 文件名
+- 类型
+- 时长
+- 分辨率
+- 质量评分
+- 用途
+- 自动截取的视频关键帧路径
+
+## 4. 如何替换素材
+
+如果想换成新素材：
+
+1. 删除或替换 Google Drive 对应文件夹中的旧素材。
+2. 保持文件夹名称不变：`video/`、`photo/`、`logo/`、`music/`。
+3. 重新运行 Notebook。
+4. 新视频会覆盖输出到 `output/final_30s_exhibition_video.mp4`。
+
+你也可以追加更多素材。程序会根据文件名关键词、分辨率、清晰度和视频时长自动选择更适合的素材。
+
+## 自动剪辑逻辑
+
+程序会自动生成以下 30 秒结构：
+
+| 时间 | 内容 | 优先素材 |
+| --- | --- | --- |
+| 0-3 秒 | 开场 | 展馆入口、展会现场、人流画面 |
+| 3-10 秒 | 展位展示 | 企业展位、展馆环境 |
+| 10-20 秒 | 产品展示 | 产品图片、产品视频 |
+| 20-27 秒 | 商务交流 | 客户交流、人流、活动现场 |
+| 27-30 秒 | 品牌结束页 | logo 图片 |
+
+程序会根据素材文件名和所在文件夹中的关键词推断用途。例如：`入口`、`展位`、`产品`、`交流`、`人流`、`logo` 等。如果没有匹配素材，会自动用质量评分最高的素材补位。
+
+## 本地运行方式
+
+也可以在本地命令行运行：
 
 ```bash
 python -m pip install -r requirements.txt
-python src/generate_exhibition_video.py \
-  --input-dir "/path/to/30秒快剪-JFEX展会速览" \
-  --output "/path/to/Exhibition_30s_Video/output/final_30s_exhibition_video.mp4"
+python generate_video.py \
+  --input-dir "/path/to/30秒快剪-JFEX展会速览"
 ```
 
-## 常见问题
+指定输出路径：
 
-### 1. 找不到素材怎么办？
+```bash
+python generate_video.py \
+  --input-dir "/path/to/30秒快剪-JFEX展会速览" \
+  --output "/path/to/final_30s_exhibition_video.mp4"
+```
 
-请确认文件夹名称和 README 中完全一致，尤其是：`30秒快剪-JFEX展会速览`、`展馆入口照片`、`展位照片`、`展馆内视频`、`展会logo`。
+## 文件说明
 
-### 2. 视频不足 19 秒怎么办？
-
-脚本会自动循环展馆内视频，直到填满 8-27 秒这一段。
-
-### 3. 图片比例不是 16:9 怎么办？
-
-脚本会自动居中裁切并缩放到 1920 × 1080，同时添加轻微推近效果。
-
-### 4. 可以更换字幕吗？
-
-可以。请编辑 `src/generate_exhibition_video.py` 中的 `DEFAULT_CAPTIONS`。
+- `Generate_30s_Exhibition_Video.ipynb`：Google Colab Notebook，一键挂载 Drive、扫描素材、分析素材、生成视频。
+- `generate_video.py`：核心视频生成程序。
+- `requirements.txt`：Colab 和本地运行所需依赖。
+- `README.md`：中文使用说明。
